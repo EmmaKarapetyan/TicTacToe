@@ -1,12 +1,11 @@
 import telebot
 from telebot import types
-from tgame_XO import *
+from tgame_XO import TicTacToeGame
 
 bot = telebot.TeleBot('7030877829:AAFMoN2SnbB_ivzfa_HSh-hvKhgVNg7lpLc')
 
 level = None
 character = None
-game_list = []
 
 @bot.message_handler(commands = ['start'])
 def start_message(message):
@@ -31,12 +30,12 @@ def callback_query(call):
     try:
         global character, level, game_list
         character = call.data
-        '''game_list.append(TicTacToeGame(character, level))
-        game_list[-1].game(bot, call)'''
         game = TicTacToeGame(character, level)
-        if game.game(bot, call):
-            del game
-            start_message(call.message)
+        game.start_game(bot, call)
+        while game.endGame():        
+            game.game(bot, call)
+        bot.send_message(call.message.chat.id, f"{game.character} player Wins!")
+        start_message(call.message)
     except:
         pass
     

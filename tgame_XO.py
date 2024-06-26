@@ -19,6 +19,12 @@ class TicTacToeGame:
         self.message_id = None
 
 
+    def endGame(self):
+        if self.evaluate() != 0 or (not any(' ' in row for row in self.board)):
+            return False
+        return True 
+
+
     def edit_board(self):
         button_list = []
         index = 0
@@ -47,7 +53,7 @@ class TicTacToeGame:
 
 
     def user_play(self, bot, call):
-        @bot.callback_query_handler(func=lambda call: True)
+        @bot.callback_query_handler(func=lambda call: int(call.data) < 10 and int(call.data) >= 0)
         def play(call):
             row, col = divmod(int(call.data), self.length)
             if self.board[row][col] == ' ':
@@ -130,6 +136,7 @@ class TicTacToeGame:
         return best_move
 
 
+    '''    
     def game(self, bot, call):
         send_message = bot.send_message(call.message.chat.id, "Lets play!!!", reply_markup=self.edit_board())
         self.message_id = send_message.message_id
@@ -150,4 +157,26 @@ class TicTacToeGame:
                         self.character = self.uch
                 bot.edit_message_reply_markup(call.message.chat.id, self.message_id, reply_markup=self.edit_board())
         bot.send_message(call.message.chat.id, f"{self.character} player Wins!")
-        return True
+        return'''
+        
+        
+    def start_game(self, bot, call):
+        send_message = bot.send_message(call.message.chat.id, "Lets play!!!", reply_markup=self.edit_board())
+        self.message_id = send_message.message_id
+    
+    
+    def game(self, bot, call):
+        if self.character == self.uch:
+            self.user_play(bot, call)
+        elif self.level == 'easy':
+            self.rand_play(bot, call)
+        elif self.level == 'hard':
+            best_move = self.find_best_move()
+            if best_move:
+                row, col = best_move
+                self.board[row][col] = self.cch
+                self.evaluate()
+                if not self.win:
+                    self.character = self.uch
+            bot.edit_message_reply_markup(call.message.chat.id, self.message_id, reply_markup=self.edit_board())
+        
