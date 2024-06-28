@@ -2,10 +2,6 @@ import random
 from telebot import types
 
 class TicTacToeGame:
-    def __new__(cls, *args, **kwargs):
-        instance = super(TicTacToeGame, cls).__new__(cls)
-        return instance
-    
     def __init__(self, uch, level):
         self.length = 3
         self.board = [[' ' for _ in range(self.length)] for _ in range(self.length)]
@@ -13,17 +9,15 @@ class TicTacToeGame:
         self.level = level
         self.character = 'X'
         self.uch = uch
-        self.cch = 'O'
-        if uch == 'O':
-            self.cch = 'X'
+        self.cch = 'O' if uch == 'X' else 'X'
         self.message_id = None
 
-
-    def endGame(self):
-        if self.evaluate() != 0 or (not any(' ' in row for row in self.board)):
-            return False
-        return True 
-
+    def end_game(self):
+        if self.evaluate() != 0:
+            return f"{self.character} player Wins!"
+        if not any(' ' in row for row in self.board):
+            return 'Finish'
+        return False
 
     def edit_board(self):
         button_list = []
@@ -36,7 +30,6 @@ class TicTacToeGame:
         markup = types.InlineKeyboardMarkup(row_width=self.length)
         markup.add(*button_list)
         return markup
-
 
     def rand_play(self, bot, call):
         check = True
@@ -51,19 +44,32 @@ class TicTacToeGame:
                 check = False
         bot.edit_message_reply_markup(call.message.chat.id, self.message_id, reply_markup=self.edit_board())
 
-
     def user_play(self, bot, call):
-        @bot.callback_query_handler(func=lambda call: int(call.data) < 10 and int(call.data) >= 0)
-        def play(call):
-            row, col = divmod(int(call.data), self.length)
-            if self.board[row][col] == ' ':
-                self.board[row][col] = self.uch
-                bot.edit_message_reply_markup(call.message.chat.id, self.message_id, reply_markup=self.edit_board())
-                self.evaluate()
-                if not self.win:
-                    self.character = self.cch
-        bot.register_next_step_handler(call.message, play)  
+        row, col = divmod(int(call.data), self.length)
+        if self.board[row][col] == ' ':
+            self.board[row][col] = self.uch
+            bot.edit_message_reply_markup(call.message.chat.id, self.message_id, reply_markup=self.edit_board())
+            self.evaluate()
+            if not self.win:
+                self.character = self.cch
+                self.bot_move(bot, call)
 
+    def bot_move(self, bot, call):
+        try:
+            if self.level == 'easy':
+                self.rand_play(bot, call)
+            elif self.level == 'hard':
+                best_move = self.find_best_move()
+                print(best_move)
+                if best_move:
+                    row, col = best_move
+                    self.board[row][col] = self.cch
+                    self.evaluate()
+                    if not self.win:
+                        self.character = self.uch
+                bot.edit_message_reply_markup(call.message.chat.id, self.message_id, reply_markup=self.edit_board())
+        except:
+            pass
 
     def evaluate(self):
         win_cond = [
@@ -136,47 +142,8 @@ class TicTacToeGame:
         return best_move
 
 
-    '''    
-    def game(self, bot, call):
-        send_message = bot.send_message(call.message.chat.id, "Lets play!!!", reply_markup=self.edit_board())
-        self.message_id = send_message.message_id
-        while not self.win:
-            if not any(' ' in row for row in self.board):
-                break
-            if self.character == self.uch:
-                self.user_play(bot, call)
-            elif self.level == 'easy':
-                self.rand_play(bot, call)
-            elif self.level == 'hard':
-                best_move = self.find_best_move()
-                if best_move:
-                    row, col = best_move
-                    self.board[row][col] = self.cch
-                    self.evaluate()
-                    if not self.win:
-                        self.character = self.uch
-                bot.edit_message_reply_markup(call.message.chat.id, self.message_id, reply_markup=self.edit_board())
-        bot.send_message(call.message.chat.id, f"{self.character} player Wins!")
-        return'''
-        
-        
     def start_game(self, bot, call):
-        send_message = bot.send_message(call.message.chat.id, "Lets play!!!", reply_markup=self.edit_board())
+        send_message = bot.send_message(call.message.chat.id, "Let's play!!!", reply_markup=self.edit_board())
         self.message_id = send_message.message_id
-    
-    
-    def game(self, bot, call):
-        if self.character == self.uch:
-            self.user_play(bot, call)
-        elif self.level == 'easy':
+        if self.cch == 'X' :
             self.rand_play(bot, call)
-        elif self.level == 'hard':
-            best_move = self.find_best_move()
-            if best_move:
-                row, col = best_move
-                self.board[row][col] = self.cch
-                self.evaluate()
-                if not self.win:
-                    self.character = self.uch
-            bot.edit_message_reply_markup(call.message.chat.id, self.message_id, reply_markup=self.edit_board())
-        
