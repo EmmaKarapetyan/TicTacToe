@@ -5,12 +5,12 @@ class TicTacToeGame:
     def __init__(self, uch, level):
         self.length = 3
         self.board = [[' ' for _ in range(self.length)] for _ in range(self.length)]
-        self.win = False
         self.level = level
         self.character = 'X'
         self.uch = uch
         self.cch = 'O' if uch == 'X' else 'X'
         self.message_id = None
+
 
     def end_game(self):
         if self.evaluate() != 0:
@@ -18,6 +18,7 @@ class TicTacToeGame:
         if not any(' ' in row for row in self.board):
             return 'Finish'
         return False
+
 
     def edit_board(self):
         button_list = []
@@ -31,6 +32,7 @@ class TicTacToeGame:
         markup.add(*button_list)
         return markup
 
+
     def rand_play(self, bot, call):
         check = True
         while check:
@@ -39,10 +41,11 @@ class TicTacToeGame:
             if self.board[row][col] == ' ':
                 self.board[row][col] = self.character
                 self.evaluate()
-                if not self.win:
+                if not self.end_game():
                     self.character = self.uch
                 check = False
         bot.edit_message_reply_markup(call.message.chat.id, self.message_id, reply_markup=self.edit_board())
+
 
     def user_play(self, bot, call):
         row, col = divmod(int(call.data), self.length)
@@ -50,26 +53,23 @@ class TicTacToeGame:
             self.board[row][col] = self.uch
             bot.edit_message_reply_markup(call.message.chat.id, self.message_id, reply_markup=self.edit_board())
             self.evaluate()
-            if not self.win:
+            if not self.end_game():
                 self.character = self.cch
                 self.bot_move(bot, call)
 
+
     def bot_move(self, bot, call):
-        try:
-            if self.level == 'easy':
-                self.rand_play(bot, call)
-            elif self.level == 'hard':
-                best_move = self.find_best_move()
-                print(best_move)
-                if best_move:
-                    row, col = best_move
-                    self.board[row][col] = self.cch
-                    self.evaluate()
-                    if not self.win:
-                        self.character = self.uch
-                bot.edit_message_reply_markup(call.message.chat.id, self.message_id, reply_markup=self.edit_board())
-        except:
-            pass
+        if self.level == 'easy':
+            self.rand_play(bot, call)
+        elif self.level == 'hard':
+            self.minimax(0, self.cch == 'O')
+            row, col = self.best_move
+            self.board[row][col] = self.cch
+            self.evaluate()
+            if not self.end_game():
+                self.character = self.uch
+            bot.edit_message_reply_markup(call.message.chat.id, self.message_id, reply_markup=self.edit_board())
+
 
     def evaluate(self):
         win_cond = [
@@ -82,8 +82,7 @@ class TicTacToeGame:
             row2, col2 = cond[1]
             row3, col3 = cond[2]
             if self.board[row1][col1] == self.board[row2][col2] == self.board[row3][col3] != ' ':
-                self.win = True
-                if self.board[row1][col1] == 'X':
+                if self.board[row1][col1] == 'O':
                     return 10
                 else:
                     return -10
@@ -92,7 +91,7 @@ class TicTacToeGame:
 
     def minimax(self, depth, isMax):
         score = self.evaluate()
-        self.win = False
+
         if score == 10:
             return score - depth
         if score == -10:
@@ -102,44 +101,32 @@ class TicTacToeGame:
 
         if isMax:
             best = -1000
+            move = None
             for i in range(3):
                 for j in range(3):
                     if self.board[i][j] == ' ':
-                        self.board[i][j] = self.cch
-                        best = max(best, self.minimax(depth + 1, not isMax))
+                        self.board[i][j] = 'O'
+                        value = self.minimax(depth + 1, not isMax)
                         self.board[i][j] = ' '
+                        if value > best:
+                            best = value
+                            move = (i, j)
+            self.best_move = move
             return best
         else:
             best = 1000
+            move = None
             for i in range(3):
                 for j in range(3):
                     if self.board[i][j] == ' ':
-                        self.board[i][j] = self.uch
-                        best = min(best, self.minimax(depth + 1, not isMax))
+                        self.board[i][j] = 'X'
+                        value = self.minimax(depth + 1, not isMax)
                         self.board[i][j] = ' '
+                        if value < best:
+                            best = value
+                            move = (i, j)
+            self.best_move = move
             return best
-
-
-    def find_best_move(self):
-        best_move = None
-        best_value = -1000 if self.cch == 'X' else 1000
-        
-        for i in range(3):
-            for j in range(3):
-                if self.board[i][j] == ' ':
-                    self.board[i][j] = self.cch
-                    move_value = self.minimax(0, False)
-                    self.board[i][j] = ' '
-                    
-                    if self.cch == 'X':
-                        if move_value > best_value:
-                            best_value = move_value
-                            best_move = (i, j)
-                    else:
-                        if move_value < best_value:
-                            best_value = move_value
-                            best_move = (i, j)
-        return best_move
 
 
     def start_game(self, bot, call):
@@ -147,3 +134,6 @@ class TicTacToeGame:
         self.message_id = send_message.message_id
         if self.cch == 'X' :
             self.rand_play(bot, call)
+            
+            
+            

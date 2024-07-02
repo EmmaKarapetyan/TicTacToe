@@ -32,13 +32,18 @@ def character_choice(call):
 
 @bot.callback_query_handler(func=lambda call: call.data.isdigit())
 def handle_move(call):
-    game = games.get(call.message.chat.id)
-    if game:
-        game.user_play(bot, call)
-        message = game.end_game()
-        if message:
-            bot.send_message(call.message.chat.id, message)
-            games.pop(call.message.chat.id, None)
-            start_message(call.message)
+    try:
+        game = games.get(call.message.chat.id)
+        if game:
+            game.user_play(bot, call)
+            msg = game.end_game()
+            if msg:
+                bot.send_message(call.message.chat.id, msg)
+                games.pop(call.message.chat.id, None)
+                start_message(call.message)
+    except:
+        bot.send_message(call.message.chat.id, "Finish!!!")
+        games.pop(call.message.chat.id, None)
+        start_message(call.message)
 
 bot.polling()
