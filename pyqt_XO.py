@@ -159,7 +159,7 @@ class Window(QMainWindow):
             for col in row:
                 if col.text() == ' ':
                     return False
-        self.turn_label.setText('       Finish       ')
+        self.turn_label.setText('        Finish        ')
         return True
         
     
