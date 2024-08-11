@@ -230,6 +230,7 @@ class Window(QMainWindow):
             if not self.end_game():
                 self.character = self.uch
                 self.user_play(None)
+                self.turn_label.setText(f"       {self.character} TURN       ")
 
     
     def rand_play(self):
