@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 from tgame_XO import *
 
-bot = telebot.TeleBot('7030877829:AAFMoN2SnbB_ivzfa_HSh-hvKhgVNg7lpLc')
+bot = telebot.TeleBot('7030877829:AAFMoN2SnbB_ivzfa_HSh-hvKhgVNg7lpLc') #bot token
 
 games = {}
 
